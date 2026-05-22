@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kick Stats Plugin — Setup Guide</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green:  #53fc18;
+    --dark:   #0a0a0a;
+    --card:   #141414;
+    --card2:  #1a1a1a;
+    --border: #222;
+    --text:   #ccc;
+    --dim:    #555;
+    --yellow: #facc15;
+    --blue:   #60a5fa;
+  }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding: 64px 0 48px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 56px;
+  }
+  .logo {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 72px; height: 72px;
+    background: var(--green); border-radius: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 40px rgba(83,252,24,0.25);
+  }
+  .logo svg { width: 42px; height: 42px; }
+  header h1 { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin-bottom: 8px; }
+  header p  { font-size: 15px; color: var(--dim); }
+  .badge {
+    display: inline-block; background: rgba(83,252,24,0.1); border: 1px solid rgba(83,252,24,0.3);
+    color: var(--green); font-size: 12px; font-weight: 600; padding: 3px 10px;
+    border-radius: 99px; margin-top: 14px;
+  }
+
+  /* Steps */
+  .steps { display: flex; flex-direction: column; gap: 32px; }
+
+  .step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .step-header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card2);
+  }
+  .step-num {
+    flex: 0 0 36px; height: 36px;
+    background: var(--green); color: #111;
+    font-size: 15px; font-weight: 800;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-title { font-size: 16px; font-weight: 700; color: #fff; }
+  .step-sub   { font-size: 12px; color: var(--dim); margin-top: 2px; }
+
+  .step-body { padding: 24px; }
+
+  p { margin-bottom: 14px; font-size: 14px; }
+  p:last-child { margin-bottom: 0; }
+
+  /* Numbered sub-steps */
+  ol { padding-left: 20px; margin-bottom: 14px; }
+  ol li { font-size: 14px; margin-bottom: 8px; padding-left: 4px; }
+  ol li:last-child { margin-bottom: 0; }
+
+  /* Code / URI block */
+  .code-block {
+    background: #0a0a0a; border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px;
+    font-family: 'Menlo', 'Consolas', monospace;
+    font-size: 13px; color: var(--green);
+    margin: 12px 0; word-break: break-all;
+    position: relative;
+  }
+  .copy-hint { font-size: 11px; color: var(--dim); margin-top: 6px; }
+
+  /* Info / warning boxes */
+  .info-box {
+    border-radius: 8px; padding: 12px 16px;
+    font-size: 13px; line-height: 1.6;
+    margin: 14px 0;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .info-box.tip  { background: rgba(83,252,24,0.06);  border: 1px solid rgba(83,252,24,0.2);  color: #a3e6a3; }
+  .info-box.warn { background: rgba(250,204,21,0.06); border: 1px solid rgba(250,204,21,0.2); color: #fde68a; }
+  .info-box.note { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.2); color: #bfdbfe; }
+  .info-box-icon { flex: 0 0 18px; font-size: 16px; margin-top: 1px; }
+
+  /* Stat grid */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .stat-item {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px;
+  }
+  .stat-name { color: #fff; font-weight: 600; margin-bottom: 2px; }
+  .stat-desc { color: var(--dim); font-size: 11px; }
+
+  /* Link */
+  a { color: var(--green); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Footer */
+  footer {
+    text-align: center; margin-top: 64px; padding-top: 32px;
+    border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--dim);
+  }
+  footer a { color: #333; }
+  footer a:hover { color: var(--dim); }
+
+  /* Highlight */
+  strong { color: #fff; }
+  code { background: #1a1a1a; border: 1px solid var(--border); border-radius: 3px; padding: 1px 6px; font-family: monospace; font-size: 12px; color: var(--green); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 40 40" fill="none"><path d="M10 8h5v9l7-9h6L20 18l8 14h-6l-6-10-1 1.5V32h-5V8z" fill="#111"/></svg>
+    </div>
+    <h1>Kick Stats Plugin</h1>
+    <p>Setup guide for the Ajazz AKP02 mPanel</p>
+    <div class="badge">by salty-bear</div>
+  </header>
+
+  <div class="steps">
+
+    <!-- Step 1 -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Install the Plugin</div>
+          <div class="step-sub">Copy files to your mPanel plugins folder</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ol>
+          <li>Download <strong>com.kick.followcount.mPanelPlugin.zip</strong></li>
+          <li>Extract the zip — you'll get a folder called <code>com.kick.followcount.mPanelPlugin</code></li>
+          <li>Copy that folder to:<br>
+            <div class="code-block">%APPDATA%\HotSpot\MiraBox Craft\plugins\</div>
+            <span class="copy-hint">On Windows, paste this path into File Explorer's address bar</span>
+          </li>
+          <li>Restart <strong>Ajazz Craft</strong> (MiraBox Craft)</li>
+          <li>The plugin appears as <strong>"Kick Stats"</strong> in the right panel</li>
+        </ol>
+        <div class="info-box tip">
+          <div class="info-box-icon">💡</div>
+          <div>Drag any of the 16 stat tiles onto your panel to get started. You can have multiple tiles showing different stats at once.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">Create a Kick Developer App</div>
+          <div class="step-sub">One-time setup — takes about 2 minutes</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ol>
+          <li>Go to <a href="https://kick.com/settings/developer" target="_blank">kick.com/settings/developer</a></li>
+          <li>Click <strong>Create Application</strong></li>
+          <li>Fill in any name (e.g. <em>My mPanel Stats</em>) and description</li>
+          <li>Set the <strong>Redirect URI</strong> to exactly:
+            <div class="code-block">https://saltybear88.github.io/salty-auth/</div>
+            <span class="copy-hint">⚠ Must match exactly — including the trailing slash</span>
+          </li>
+          <li>Click <strong>Save</strong></li>
+          <li>Copy your <strong>Client ID</strong> and <strong>Client Secret</strong> — you'll need these next</li>
+        </ol>
+        <div class="info-box warn">
+          <div class="info-box-icon">⚠</div>
+          <div>Keep your <strong>Client Secret</strong> private. Never share it publicly or post it in chat.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">Enter Credentials in the Plugin</div>
+          <div class="step-sub">Paste your Client ID and Secret into the settings panel</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ol>
+          <li>In Ajazz Craft, click any Kick Stats tile to open its settings panel</li>
+          <li>Under <strong>Kick API Credentials</strong>, paste your <strong>Client ID</strong></li>
+          <li>Paste your <strong>Client Secret</strong></li>
+          <li>Enter your Kick channel <strong>Slug</strong> (e.g. <code>salty-bear</code> — the part after kick.com/)</li>
+          <li>Click <strong>Save &amp; Apply All</strong></li>
+        </ol>
+        <div class="info-box note">
+          <div class="info-box-icon">ℹ</div>
+          <div>These settings are <strong>shared across all tiles</strong> — you only need to enter them once. The green notice at the top of the settings panel confirms this.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-title">Connect Your Kick Account</div>
+          <div class="step-sub">Enables real-time session tracking — followers, subs, gifts</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ol>
+          <li>In the settings panel, click <strong>Connect Kick Account</strong></li>
+          <li>Your browser opens — you'll be redirected to Kick's login page automatically</li>
+          <li>Sign in to Kick if needed, then click <strong>Authorise</strong></li>
+          <li>The page shows a code — it's automatically copied to your clipboard</li>
+          <li>Switch back to Ajazz Craft — a paste field has appeared in the settings panel</li>
+          <li>Paste the code and click <strong>Submit</strong></li>
+          <li>The panel shows <strong style="color:#4ade80">✓ Connected — real-time events active</strong></li>
+        </ol>
+        <div class="info-box tip">
+          <div class="info-box-icon">💡</div>
+          <div>You only need to do this once. The plugin stores a refresh token and reconnects automatically — even after restarting Ajazz Craft.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <div>
+          <div class="step-title">Available Stat Tiles</div>
+          <div class="step-sub">Drag any of these onto your panel</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>All 16 tiles share the same settings. Each tile displays a different stat:</p>
+        <div class="stat-grid">
+          <div class="stat-item"><div class="stat-name">Total Followers</div><div class="stat-desc">Live follower count, updated every second</div></div>
+          <div class="stat-item"><div class="stat-name">Total Subscribers</div><div class="stat-desc">Current subscriber count</div></div>
+          <div class="stat-item"><div class="stat-name">Total Gifted Subs</div><div class="stat-desc">Gifted subs this session</div></div>
+          <div class="stat-item"><div class="stat-name">Recent Follower</div><div class="stat-desc">Username of latest follower</div></div>
+          <div class="stat-item"><div class="stat-name">Recent Subscriber</div><div class="stat-desc">Username of latest subscriber</div></div>
+          <div class="stat-item"><div class="stat-name">Recent Gifter</div><div class="stat-desc">Username of latest gift sender</div></div>
+          <div class="stat-item"><div class="stat-name">Top Donor</div><div class="stat-desc">Highest KICK gifter this session</div></div>
+          <div class="stat-item"><div class="stat-name">Top Gifter</div><div class="stat-desc">Most gifted subs this session</div></div>
+          <div class="stat-item"><div class="stat-name">Follower Goal %</div><div class="stat-desc">Progress ring toward follower target</div></div>
+          <div class="stat-item"><div class="stat-name">Subscription Goal %</div><div class="stat-desc">Progress ring toward sub target</div></div>
+          <div class="stat-item"><div class="stat-name">Donation Goal %</div><div class="stat-desc">Progress ring toward gift target</div></div>
+          <div class="stat-item"><div class="stat-name">Viewer Goal %</div><div class="stat-desc">Progress ring toward viewer target</div></div>
+          <div class="stat-item"><div class="stat-name">Current Viewers</div><div class="stat-desc">Live viewer count (OFFLINE when not live)</div></div>
+          <div class="stat-item"><div class="stat-name">Session Followers</div><div class="stat-desc">New followers since last reset</div></div>
+          <div class="stat-item"><div class="stat-name">Session Subscribers</div><div class="stat-desc">New subs since last reset</div></div>
+          <div class="stat-item"><div class="stat-name">Stream Uptime</div><div class="stat-desc">How long you've been live</div></div>
+        </div>
+        <div class="info-box note" style="margin-top:16px">
+          <div class="info-box-icon">ℹ</div>
+          <div>Goal tiles have an extra <strong>Goal</strong> field in settings — set your target number to show the progress ring. Leave it at 0 to just show the current value.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">6</div>
+        <div>
+          <div class="step-title">Customise Your Tiles</div>
+          <div class="step-sub">Colours, fonts, labels, refresh rate</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Click any tile in Ajazz Craft to open its settings. <strong>Shared settings</strong> (marked with a green notice) apply to all tiles at once:</p>
+        <ol>
+          <li><strong>Count colour</strong> — the large number colour (default white)</li>
+          <li><strong>Label colour</strong> — the small label below the number</li>
+          <li><strong>Background</strong> — optional filled background with colour picker</li>
+          <li><strong>Font sizes</strong> — count and label size in pixels</li>
+          <li><strong>Refresh interval</strong> — how often to poll Kick (default 1000ms)</li>
+        </ol>
+        <p><strong>Per-tile settings</strong> (marked with a yellow notice) only affect the current tile:</p>
+        <ol>
+          <li><strong>Show label</strong> — toggle the label text on/off</li>
+          <li><strong>Label text</strong> — override the default label (e.g. change "FOLLOWERS" to "FANS")</li>
+          <li><strong>Goal</strong> — target number for goal-type tiles</li>
+        </ol>
+        <div class="info-box tip">
+          <div class="info-box-icon">💡</div>
+          <div>Changes auto-save after half a second — you don't need to click Save for most adjustments. Use <strong>Save &amp; Apply All</strong> to force an immediate update across all tiles.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Troubleshooting -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num" style="background:#f87171;color:#fff">?</div>
+        <div>
+          <div class="step-title">Troubleshooting</div>
+          <div class="step-sub">Common issues and fixes</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p><strong style="color:#f87171">Tile shows "Setup required"</strong><br>
+        Enter your Client ID, Client Secret, and Slug in the settings panel, then click Save &amp; Apply All.</p>
+
+        <p><strong style="color:#f87171">"invalid redirect uri" on the auth page</strong><br>
+        Go to kick.com/settings/developer and make sure the redirect URI is exactly:<br>
+        <code>https://saltybear88.github.io/salty-auth/</code> — including the trailing slash.</p>
+
+        <p><strong style="color:#f87171">Subscriber count shows 0</strong><br>
+        Kick's API only exposes subscriber count when your channel has active subscriptions enabled and at least one subscriber. Connect your account (Step 4) to enable it.</p>
+
+        <p><strong style="color:#f87171">Session stats (recent follower, gifter, etc.) aren't updating</strong><br>
+        These require the account to be connected via OAuth (Step 4). They reset when you click <strong>Reset Session Counts</strong> or restart Ajazz Craft.</p>
+
+        <p><strong style="color:#f87171">Settings disappear when switching tiles</strong><br>
+        Update to the latest version of the plugin. Click any tile and hit <strong>Save &amp; Apply All</strong> once — settings will persist across all tiles from then on.</p>
+      </div>
+    </div>
+
+  </div><!-- /steps -->
+
+  <footer>
+    <p>Kick Stats Plugin for Ajazz AKP02 mPanel &nbsp;·&nbsp; Made by <a href="https://kick.com/salty-bear" target="_blank">salty-bear</a></p>
+    <p style="margin-top:6px"><a href="https://paypal.me/bulb1988?locale.x=en_GB&country.x=GB" target="_blank">Support via PayPal</a> &nbsp;·&nbsp; <a href="https://kick.com/settings/developer" target="_blank">Kick Developer Portal</a></p>
+  </footer>
+
+</div>
+</body>
+</html>
