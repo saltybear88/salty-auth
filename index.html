@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salty Bear — Kick Connect</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green:  #53fc18;
+    --dark:   #0d0d0d;
+    --card:   #161616;
+    --border: #222;
+    --text:   #ccc;
+    --dim:    #555;
+  }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* Green glow blob */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(83,252,24,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 40px 40px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 0 1px rgba(83,252,24,0.05), 0 32px 64px rgba(0,0,0,0.6);
+  }
+
+  /* K logo */
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: var(--green);
+    border-radius: 14px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 32px rgba(83,252,24,0.3);
+  }
+  .logo svg { width: 36px; height: 36px; }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+
+  .sub {
+    font-size: 13px;
+    color: var(--dim);
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  /* State panels */
+  .state { display: none; }
+  .state.active { display: block; }
+
+  /* Spinner */
+  .spinner-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 0 4px;
+  }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .spinner-label {
+    font-size: 13px;
+    color: var(--dim);
+  }
+
+  /* Progress bar */
+  .progress-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin: 20px 0 8px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--green);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px rgba(83,252,24,0.6);
+  }
+  .progress-label {
+    font-size: 11px;
+    color: var(--dim);
+    text-align: right;
+    margin-bottom: 24px;
+  }
+
+  /* Success icon */
+  .success-icon {
+    width: 72px; height: 72px;
+    background: rgba(83,252,24,0.1);
+    border: 2px solid rgba(83,252,24,0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .success-icon svg { width: 36px; height: 36px; }
+
+  .success-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .success-msg {
+    font-size: 13px;
+    color: var(--dim);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  /* Code display (fallback only) */
+  .code-box {
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    text-align: left;
+  }
+  .code-value {
+    font-family: 'Menlo', 'Consolas', monospace;
+    font-size: 11px;
+    color: var(--green);
+    flex: 1;
+    word-break: break-all;
+    line-height: 1.4;
+  }
+  .copy-btn {
+    flex: 0 0 auto;
+    background: var(--border);
+    border: none;
+    border-radius: 5px;
+    color: #aaa;
+    font-size: 11px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: #2a2a2a; color: #fff; }
+  .copy-btn.copied { background: rgba(83,252,24,0.15); color: var(--green); }
+
+  .fallback-note {
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  /* Close countdown */
+  .countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+  .countdown-dot {
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.3; transform: scale(0.7); }
+  }
+
+  /* Error state */
+  .error-icon {
+    width: 64px; height: 64px;
+    background: rgba(248,113,113,0.1);
+    border: 2px solid rgba(248,113,113,0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    font-size: 28px;
+  }
+  .error-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  .error-msg   { font-size: 13px; color: var(--dim); line-height: 1.6; margin-bottom: 20px; }
+
+  .retry-btn {
+    display: inline-block;
+    background: var(--green);
+    color: #111;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .retry-btn:hover { background: #70ff30; transform: translateY(-1px); }
+
+  /* Footer */
+  .footer {
+    margin-top: 32px;
+    font-size: 11px;
+    color: #2a2a2a;
+  }
+  .footer a { color: #333; text-decoration: none; }
+  .footer a:hover { color: var(--dim); }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Logo + header (always visible) -->
+  <div class="logo">
+    <!-- Kick K logo -->
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 8h5v9l7-9h6L20 18l8 14h-6l-6-10-1 1.5V32h-5V8z" fill="#111"/>
+    </svg>
+  </div>
+  <h1>salty-bear</h1>
+  <p class="sub">Kick Stats mPanel Plugin</p>
+
+  <!-- ── STATE: Launching ──────────────────────────────────── -->
+  <div class="state" id="stateLaunching">
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <div class="spinner-label">Connecting to Kick…</div>
+    </div>
+    <div class="progress-track" style="margin-top:24px">
+      <div class="progress-bar" id="launchBar"></div>
+    </div>
+    <div class="progress-label" id="launchLabel">Preparing authorisation</div>
+  </div>
+
+  <!-- ── STATE: Waiting (opened without opener — system browser) ── -->
+  <div class="state" id="stateWaiting">
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <div class="spinner-label">Waiting for Kick authorisation…</div>
+    </div>
+    <div style="font-size:12px;color:var(--dim);margin-top:20px;line-height:1.6">
+      You'll be redirected to Kick to sign in.<br>
+      This page will update automatically once authorised.
+    </div>
+  </div>
+
+  <!-- ── STATE: Success (auto-close) ──────────────────────── -->
+  <div class="state" id="stateSuccess">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#53fc18" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="success-title">Connected!</div>
+    <div class="success-msg" id="successMsg">
+      Your Kick account has been linked.<br>Ajazz Craft is being updated…
+    </div>
+    <div class="countdown" id="countdown">
+      <div class="countdown-dot"></div>
+      <span id="countdownText">Closing tab in 3s…</span>
+    </div>
+  </div>
+
+  <!-- ── STATE: Fallback (no opener — show code) ─────────── -->
+  <div class="state" id="stateFallback">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#53fc18" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="success-title">Authorised!</div>
+    <p class="fallback-note">
+      Switch back to <strong style="color:#fff">Ajazz Craft</strong> — the plugin settings panel
+      has been updated automatically. You can close this tab.
+    </p>
+    <div class="code-box">
+      <div class="code-value" id="codeDisplay"></div>
+      <button class="copy-btn" id="copyBtn" onclick="copyCode()">Copy</button>
+    </div>
+    <div style="font-size:11px;color:var(--dim)">
+      If the panel didn't update, paste this code into the auth field in settings.
+    </div>
+  </div>
+
+  <!-- ── STATE: Error ──────────────────────────────────────── -->
+  <div class="state" id="stateError">
+    <div class="error-icon">✕</div>
+    <div class="error-title">Authorisation Failed</div>
+    <div class="error-msg" id="errorMsg">Something went wrong. Please try again from the plugin settings.</div>
+    <button class="retry-btn" onclick="window.close()">Close Tab</button>
+  </div>
+
+  <div class="footer">
+    Kick Stats Plugin for Ajazz AKP02 mPanel &nbsp;·&nbsp;
+    <a href="https://kick.com/salty-bear" target="_blank">kick.com/salty-bear</a>
+  </div>
+</div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+var CLIENT_ID    = '01KS30EAGXMJ89Z4V02MR9Z3X6';
+var REDIRECT_URI = 'https://saltybear88.github.io/salty-auth/';
+var SCOPES       = 'events:subscribe channel:read user:read kicks:read';
+
+// ─── State helpers ────────────────────────────────────────────────────────────
+var states = ['stateLaunching','stateWaiting','stateSuccess','stateFallback','stateError'];
+function showState(id) {
+  states.forEach(function(s) {
+    document.getElementById(s).classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── Progress bar animation ───────────────────────────────────────────────────
+var progressVal = 0;
+var progressInterval;
+function animateProgress(target, label) {
+  document.getElementById('launchLabel').textContent = label;
+  clearInterval(progressInterval);
+  progressInterval = setInterval(function() {
+    if (progressVal < target) {
+      progressVal += 2;
+      document.getElementById('launchBar').style.width = progressVal + '%';
+    } else {
+      clearInterval(progressInterval);
+    }
+  }, 20);
+}
+
+// ─── PKCE helpers ─────────────────────────────────────────────────────────────
+function generateVerifier() {
+  var array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode.apply(null, array))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+async function generateChallenge(verifier) {
+  var data   = new TextEncoder().encode(verifier);
+  var digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode.apply(null, new Uint8Array(digest)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+// ─── Main logic ───────────────────────────────────────────────────────────────
+var authCode     = null;
+var codeVerifier = null;
+
+async function main() {
+  var params = new URLSearchParams(window.location.search);
+  var code   = params.get('code');
+  var error  = params.get('error');
+  var state  = params.get('state');
+
+  // ── Callback: Kick redirected back with a code ───────────────────────────
+  if (code) {
+    authCode = code;
+    showState('stateLaunching');
+    animateProgress(60, 'Authorisation received…');
+
+    // Try to send to opener (plugin PI opened us via window.open)
+    var sent = trySendToOpener(code, state);
+
+    setTimeout(function() {
+      animateProgress(100, sent ? 'Sending to plugin…' : 'Complete!');
+    }, 300);
+
+    setTimeout(function() {
+      if (sent) {
+        showState('stateSuccess');
+        startCountdown();
+      } else {
+        // No opener — show fallback with code visible
+        document.getElementById('codeDisplay').textContent = code;
+        showState('stateFallback');
+        autoCopy(code);
+      }
+    }, 1200);
+    return;
+  }
+
+  // ── Error from Kick ──────────────────────────────────────────────────────
+  if (error) {
+    document.getElementById('errorMsg').textContent =
+      'Kick returned an error: ' + error + '. Please try again from the plugin settings.';
+    showState('stateError');
+    return;
+  }
+
+  // ── Fresh load: generate PKCE and redirect to Kick ───────────────────────
+  showState('stateLaunching');
+  animateProgress(30, 'Generating secure token…');
+
+  codeVerifier = generateVerifier();
+  var state    = generateVerifier().substring(0, 16);
+
+  // Store verifier in sessionStorage so we have it on callback
+  // (only works if same tab — which it will be since Kick redirects in place)
+  try { sessionStorage.setItem('pkce_verifier', codeVerifier); } catch(e) {}
+  try { sessionStorage.setItem('pkce_state', state); } catch(e) {}
+
+  var challenge = await generateChallenge(codeVerifier);
+
+  animateProgress(70, 'Redirecting to Kick…');
+
+  var authUrl = 'https://id.kick.com/oauth/authorize'
+    + '?response_type=code'
+    + '&client_id='            + encodeURIComponent(CLIENT_ID)
+    + '&redirect_uri='         + encodeURIComponent(REDIRECT_URI)
+    + '&scope='                + encodeURIComponent(SCOPES)
+    + '&code_challenge='       + challenge
+    + '&code_challenge_method=S256'
+    + '&state='                + state;
+
+  // Small delay so user sees the animation before redirect
+  setTimeout(function() {
+    animateProgress(100, 'Opening Kick…');
+    setTimeout(function() {
+      window.location.href = authUrl;
+    }, 400);
+  }, 600);
+}
+
+// ─── Send code to plugin PI via window.opener.postMessage ────────────────────
+function trySendToOpener(code, state) {
+  try {
+    // Retrieve stored verifier
+    var verifier = sessionStorage.getItem('pkce_verifier') || '';
+
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({
+        type:     'kick-auth-callback',
+        code:     code,
+        verifier: verifier,
+        state:    state || ''
+      }, '*');
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+// ─── Auto-copy code to clipboard ──────────────────────────────────────────────
+function autoCopy(code) {
+  try {
+    navigator.clipboard.writeText(code).catch(function() {});
+  } catch(e) {}
+}
+
+function copyCode() {
+  var code = document.getElementById('codeDisplay').textContent;
+  navigator.clipboard.writeText(code).then(function() {
+    var btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(function() {
+    // Fallback
+    var ta = document.createElement('textarea');
+    ta.value = code;
+    ta.style.position = 'fixed';
+    ta.style.opacity  = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+// ─── Countdown then close ─────────────────────────────────────────────────────
+function startCountdown() {
+  var n = 3;
+  var el = document.getElementById('countdownText');
+  var interval = setInterval(function() {
+    n--;
+    if (n <= 0) {
+      clearInterval(interval);
+      el.textContent = 'Closing…';
+      try { window.close(); } catch(e) {}
+    } else {
+      el.textContent = 'Closing tab in ' + n + 's…';
+    }
+  }, 1000);
+}
+
+// ─── Run ──────────────────────────────────────────────────────────────────────
+main().catch(function(err) {
+  document.getElementById('errorMsg').textContent = 'Unexpected error: ' + err.message;
+  showState('stateError');
+});
+</script>
+</body>
+</html>
