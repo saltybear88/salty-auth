@@ -369,9 +369,10 @@
 
 <script>
 // ─── Config ───────────────────────────────────────────────────────────────────
-var CLIENT_ID    = '01KS30EAGXMJ89Z4V02MR9Z3X6';
+// Client ID is passed as a URL parameter by the plugin: ?client_id=XXX
 var REDIRECT_URI = 'https://saltybear88.github.io/salty-auth/';
 var SCOPES       = 'events:subscribe channel:read user:read kicks:read';
+var CLIENT_ID    = new URLSearchParams(window.location.search).get('client_id') || '';
 
 // ─── State helpers ────────────────────────────────────────────────────────────
 var states = ['stateLaunching','stateWaiting','stateSuccess','stateFallback','stateError'];
@@ -425,6 +426,10 @@ async function main() {
 
   // ── Callback: Kick redirected back with a code ───────────────────────────
   if (code) {
+    // Restore CLIENT_ID from sessionStorage (URL params are lost after Kick redirect)
+    if (!CLIENT_ID) {
+      try { CLIENT_ID = sessionStorage.getItem('pkce_client_id') || ''; } catch(e) {}
+    }
     authCode = code;
     showState('stateLaunching');
     animateProgress(60, 'Authorisation received…');
@@ -465,6 +470,12 @@ async function main() {
   }
 
   // ── Fresh load: generate PKCE and redirect to Kick ───────────────────────
+  if (!CLIENT_ID) {
+    document.getElementById('errorMsg').textContent =
+      'No Client ID provided. Please use the Connect button in the plugin settings panel.';
+    showState('stateError');
+    return;
+  }
   showState('stateLaunching');
   animateProgress(30, 'Generating secure token…');
 
@@ -475,6 +486,7 @@ async function main() {
   // (only works if same tab — which it will be since Kick redirects in place)
   try { sessionStorage.setItem('pkce_verifier', codeVerifier); } catch(e) {}
   try { sessionStorage.setItem('pkce_state', state); } catch(e) {}
+  try { sessionStorage.setItem('pkce_client_id', CLIENT_ID); } catch(e) {}
 
   var challenge = await generateChallenge(codeVerifier);
 
