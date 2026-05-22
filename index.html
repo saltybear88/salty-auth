@@ -437,11 +437,17 @@ async function main() {
     }, 300);
 
     setTimeout(function() {
-      // Always show fallback with prominent code — openUrl doesn't preserve opener
-      document.getElementById('codeDisplay').textContent = code;
+      // Combine verifier + code into one copyable string so plugin can extract both
+      var verifier = '';
+      try { verifier = sessionStorage.getItem('pkce_verifier') || ''; } catch(e) {}
+      // Format: "v:VERIFIER|c:CODE" — plugin splits on this
+      var combined = verifier ? ('v:' + verifier + '|c:' + code) : code;
+
+      document.getElementById('codeDisplay').textContent = combined;
       showState('stateFallback');
-      autoCopy(code);
-      // Also try postMessage in case somehow opener exists
+      autoCopy(combined);
+
+      // Also try postMessage in case opener exists
       if (sent) {
         showState('stateSuccess');
         startCountdown();
